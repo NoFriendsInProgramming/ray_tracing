@@ -16,6 +16,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Engine", "..\..\..\engine\p
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Ray Tracer", "..\..\..\ray tracer\projects\visual-studio-2022\Ray Tracer.vcxproj", "{83B6C652-B804-4FFB-A0E7-3B75D07EDFED}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "concurrency_tools", "..\..\..\ConcurrencyTools\projects\visual-studio-2022\ConcurrencyTools.vcxproj", "{DB0E8AFA-EB80-43E0-A46B-940A6B0C7330}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -34,6 +36,10 @@ Global
 		{83B6C652-B804-4FFB-A0E7-3B75D07EDFED}.Debug|x64.Build.0 = Debug|x64
 		{83B6C652-B804-4FFB-A0E7-3B75D07EDFED}.Release|x64.ActiveCfg = Release|x64
 		{83B6C652-B804-4FFB-A0E7-3B75D07EDFED}.Release|x64.Build.0 = Release|x64
+		{DB0E8AFA-EB80-43E0-A46B-940A6B0C7330}.Debug|x64.ActiveCfg = Debug|x64
+		{DB0E8AFA-EB80-43E0-A46B-940A6B0C7330}.Debug|x64.Build.0 = Debug|x64
+		{DB0E8AFA-EB80-43E0-A46B-940A6B0C7330}.Release|x64.ActiveCfg = Release|x64
+		{DB0E8AFA-EB80-43E0-A46B-940A6B0C7330}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

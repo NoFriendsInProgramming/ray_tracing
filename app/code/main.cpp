@@ -5,6 +5,11 @@
  * See ./LICENSE or www.boost.org/LICENSE_1_0.txt
  */
 
+#if __has_include("concurrency_tools/ThreadPool.hpp")
+    #include<concurrency_tools/ThreadPool.hpp>
+    #define USE_CONCURRENCY
+#endif
+
 #include <engine/Control.hpp>
 #include <engine/Key_Event.hpp>
 #include <engine/Path_Tracing.hpp>
@@ -78,6 +83,7 @@ namespace
 
 int main (int , char * [])
 {
+
     engine::starter.run (engine_application);
 
     return 0;
