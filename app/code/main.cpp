@@ -14,6 +14,7 @@
     #define USE_CONCURRENCY
 #endif
 
+
 #include <engine/Control.hpp>
 #include <engine/Key_Event.hpp>
 #include <engine/Path_Tracing.hpp>
@@ -85,8 +86,30 @@ namespace
 
 }
 
+bool PrintNumber(const int& number)
+{
+    cout << number << ", ";
+    return false;
+}
+
 int main (int , char * [])
 {
+#ifdef USE_CONCURRENCY
+    ThreadPool pool;
+    
+    auto a = pool.add_task(PrintNumber, 0);
+    pool.start();
+    for (int i = 1; i < 1000; ++i)
+    {
+        a = pool.add_task(PrintNumber, i);
+        
+    }
+    if (!a->get())
+    {
+        cout << "cock";
+    }
+    
+#endif // USE_CONCURRENCY
 
     engine::starter.run (engine_application);
 
