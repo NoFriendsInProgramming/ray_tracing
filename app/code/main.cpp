@@ -5,6 +5,10 @@
  * See ./LICENSE or www.boost.org/LICENSE_1_0.txt
  */
 
+#ifdef __INTELLISENSE__
+#define USE_CONCURRENCY
+#endif
+
 #if __has_include("concurrency_tools/ThreadPool.hpp")
     #include<concurrency_tools/ThreadPool.hpp>
     #define USE_CONCURRENCY
