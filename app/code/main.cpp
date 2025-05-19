@@ -86,24 +86,38 @@ namespace
 
 }
 
-bool PrintNumber(const int& number)
+class Foo
+{
+public:
+    bool PrintNumber(int&& number)
+    {
+        cout << number << ", ";
+        return false;
+    }
+};
+
+bool PrintNumber(int&& number)
 {
     cout << number << ", ";
     return false;
 }
 
+
 int main (int , char * [])
 {
 #ifdef USE_CONCURRENCY
     ThreadPool pool;
-    
-    auto a = pool.add_task(PrintNumber, 0);
+    Foo foo;
+    int c = 5;
     pool.start();
+    auto a = pool.add_task(PrintNumber, std::move(c));
+    /*
     for (int i = 1; i < 1000; ++i)
     {
-        a = pool.add_task(PrintNumber, i);
+        a = pool.add_task(&Foo::PrintNumber, foo, std::ref(i));
         
     }
+    */
     if (!a->get())
     {
         cout << "cock";

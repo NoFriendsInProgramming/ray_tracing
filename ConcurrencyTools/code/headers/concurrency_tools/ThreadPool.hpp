@@ -31,29 +31,32 @@ private:
 		Task() = default;
 	};
 
-	template< typename RETURN, typename ...ARGUMENTS >
-	struct Custom_Task : public Task
-	{
-		using Packaged_Task = std::packaged_task< RETURN(ARGUMENTS...) >;
+	template <typename Callable, typename... Args>
+	class Custom_Task : public Task {
+	public:
+		using ReturnType = std::invoke_result_t<Callable, Args...>;
+		using PackagedTask = std::packaged_task<ReturnType()>;
 
-		Packaged_Task packaged_task;
-
-		std::tuple<ARGUMENTS...> saved_arguments;
-
-		Custom_Task(RETURN(*function)(const ARGUMENTS & ...), const ARGUMENTS & ...arguments) : packaged_task(function), saved_arguments(arguments...)
-		{
+		explicit Custom_Task(Callable&& func, Args&&... args)
+			: bound_task(std::bind(std::forward<Callable>(func), std::forward<Args>(args)...)),
+			packaged_task(bound_task) {
 		}
 
-		virtual std::any get_future()
-		{
-			return std::make_shared< std::future<RETURN>>(std::move(packaged_task.get_future()));
+		std::any get_future() override {
+			return std::make_shared<std::future<ReturnType>>(packaged_task.get_future());
 		}
 
-		void invoke() override
-		{
-			std::apply(packaged_task, saved_arguments);
+		void invoke() override {
+			packaged_task();  // no arguments here, it's already bound
 		}
+
+	private:
+		std::function<ReturnType()> bound_task;
+		PackagedTask packaged_task;
 	};
+
+
+
 
 private:
 
@@ -84,26 +87,27 @@ public:
 		// cleanup: stop(), ...
 	}
 
-	template< typename RETURN, typename ...ARGUMENTS >
-	std::shared_ptr < std::future<RETURN>> add_task(RETURN(*function)(const ARGUMENTS & ...), const ARGUMENTS & ...arguments)
+	template <typename Callable, typename... Args>
+	auto add_task(Callable&& func, Args&&... args)
+		-> std::shared_ptr<std::future<std::invoke_result_t<Callable, Args...>>>
 	{
-		// Is this wasteful?
+		using ReturnType = std::invoke_result_t<Callable, Args...>;
+
 		std::any unspecified_future;
 		{
 			std::lock_guard lock(queue_mutex);
 
-			tasks.emplace(std::make_unique< Custom_Task<RETURN, ARGUMENTS...> >(function, arguments...));
+			tasks.emplace(std::make_unique<
+				Custom_Task<Callable, Args...>>(
+					std::forward<Callable>(func),
+					std::forward<Args>(args)...));
 
 			unspecified_future = tasks.back()->get_future();
 		}
-		assert(unspecified_future.type() == typeid(std::shared_ptr<std::future<RETURN>>));
 
-		// Ask about why I cant just directly return it
-		std::shared_ptr<std::future<RETURN>> typed_future = std::any_cast<std::shared_ptr<std::future<RETURN>>>(unspecified_future);
-
-		return typed_future;
-
+		return std::any_cast<std::shared_ptr<std::future<ReturnType>>>(unspecified_future);
 	}
+
 
 	void start()
 	{
