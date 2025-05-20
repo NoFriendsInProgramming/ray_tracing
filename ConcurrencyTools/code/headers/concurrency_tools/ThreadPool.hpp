@@ -31,6 +31,54 @@ private:
 		Task() = default;
 	};
 
+	// Fallback: T&& → move semantics
+	template <typename T>
+	struct forward_capture {
+		T value;
+		explicit forward_capture(T&& val) : value(std::forward<T>(val)) {}
+
+		T&& forward() { return std::move(value); }
+	};
+
+	// T& specialization: copy instead of referencing for safe types
+	template <typename T>
+	struct forward_capture<T&> {
+	private:
+		static constexpr bool should_copy =
+			std::is_copy_constructible_v<T> &&
+			(std::is_fundamental_v<T> || std::is_trivially_copyable_v<T>);
+
+	public:
+		using StorageType = std::conditional_t<should_copy, T, T*>;
+
+		StorageType storage;
+
+		explicit forward_capture(T& val)
+			: storage(init_storage(val)) {
+		}
+
+		T& forward() {
+			if constexpr (should_copy) {
+				return storage;
+			}
+			else {
+				return *storage;
+			}
+		}
+
+	private:
+		static StorageType init_storage(T& val) {
+			if constexpr (should_copy) {
+				return val; // copy
+			}
+			else {
+				return &val; // keep reference
+			}
+		}
+	};
+
+
+	// --- Custom Task Implementation ---
 	template <typename Callable, typename... Args>
 	class Custom_Task : public Task {
 	public:
@@ -38,29 +86,34 @@ private:
 		using PackagedTask = std::packaged_task<ReturnType()>;
 
 		explicit Custom_Task(Callable&& func, Args&&... args)
-			/* :bound_task(std::bind(std::forward<Callable>(func), std::forward<Args>(args)...)),
-			packaged_task(func) */{
-			packaged_task = std::packaged_task<ReturnType()>(
-				[func = std::forward<Callable>(func),
-				... args = std::forward<Args>(args)]() mutable -> ReturnType {
-					return std::invoke(std::move(func), std::move(args)...);
-				}
-			);
+			: func_(std::forward<Callable>(func)),
+			captures_(forward_capture<Args>(std::forward<Args>(args))...)
+		{
+			auto bound = [this]() mutable -> ReturnType {
+				return invoke_impl(std::index_sequence_for<Args...>{});
+				};
+
+			packaged_task_ = PackagedTask(std::move(bound));
 		}
 
 		std::any get_future() override {
-			return std::make_shared<std::future<ReturnType>>(packaged_task.get_future());
+			return std::make_shared<std::future<ReturnType>>(packaged_task_.get_future());
 		}
 
 		void invoke() override {
-			packaged_task();  // no arguments here, it's already bound
+			packaged_task_();
 		}
 
 	private:
-		std::function<ReturnType()> bound_task;
-		PackagedTask packaged_task;
-	};
+		Callable func_;
+		std::tuple<forward_capture<Args>...> captures_;
+		PackagedTask packaged_task_;
 
+		template <std::size_t... I>
+		ReturnType invoke_impl(std::index_sequence<I...>) {
+			return std::invoke(func_, std::get<I>(captures_).forward()...);
+		}
+	};
 
 
 

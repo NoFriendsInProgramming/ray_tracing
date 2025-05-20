@@ -90,7 +90,7 @@ class Foo
 {
 public:
     int hi;
-    int PrintNumber(int number)
+    int& PrintNumber(const int& number)
     {
         cout << number << ", ";
         hi = 50;
@@ -100,9 +100,9 @@ public:
 
 int& PrintNumber(int& number)
 {
-    cout << number << ", ";
-    int hi = 20;
-    return hi;
+    cout << (number*= 5) << ", ";
+    //int hi = 20;
+    return number;
 }
 
 
@@ -111,20 +111,21 @@ int main (int , char * [])
 #ifdef USE_CONCURRENCY
     ThreadPool pool;
     Foo foo;
-    int c = 5;
+    int c = 2001;
     pool.start();
-    auto a = pool.add_task(&Foo::PrintNumber, foo, c);
+    auto a = pool.add_task(PrintNumber, std::ref(c));
     
-    /*
+    
     for (int i = 1; i < 1000; ++i)
     {
         a = pool.add_task(&Foo::PrintNumber, foo, i);
         
     }
-    */
     
-    a->wait();
-    cout << " value: " << a->get();
+    
+    
+    //a->wait();
+    cout << " value: " << a->get() << " old value: " << c ;
     
 #endif // USE_CONCURRENCY
 
