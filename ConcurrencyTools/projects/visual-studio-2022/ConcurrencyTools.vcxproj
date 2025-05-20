@@ -19,10 +19,10 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\code\source\ThreadPool.cpp" />
+    <ClInclude Include="..\..\code\headers\concurrency_tools\ThreadPool.hpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\code\headers\concurrency_tools\ThreadPool.hpp" />
+    <ClCompile Include="..\..\code\source\ThreadPool.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>

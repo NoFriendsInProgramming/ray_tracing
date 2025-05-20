@@ -78,6 +78,7 @@ namespace udit::engine
             template< typename ...ARGUMENTS >
             Component * allocate (Id entity_id, const ARGUMENTS & ...arguments)
             {
+                //Mutex here
                 pool.emplace_back (arguments...);
 
                 auto component = &pool.back ();
