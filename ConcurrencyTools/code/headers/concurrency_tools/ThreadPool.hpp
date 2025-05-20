@@ -38,8 +38,14 @@ private:
 		using PackagedTask = std::packaged_task<ReturnType()>;
 
 		explicit Custom_Task(Callable&& func, Args&&... args)
-			: bound_task(std::bind(std::forward<Callable>(func), std::forward<Args>(args)...)),
-			packaged_task(bound_task) {
+			/* :bound_task(std::bind(std::forward<Callable>(func), std::forward<Args>(args)...)),
+			packaged_task(func) */{
+			packaged_task = std::packaged_task<ReturnType()>(
+				[func = std::forward<Callable>(func),
+				... args = std::forward<Args>(args)]() mutable -> ReturnType {
+					return std::invoke(std::move(func), std::move(args)...);
+				}
+			);
 		}
 
 		std::any get_future() override {

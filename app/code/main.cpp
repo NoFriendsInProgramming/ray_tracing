@@ -89,17 +89,20 @@ namespace
 class Foo
 {
 public:
-    bool PrintNumber(int&& number)
+    int hi;
+    int PrintNumber(int number)
     {
         cout << number << ", ";
-        return false;
+        hi = 50;
+        return hi;
     }
 };
 
-bool PrintNumber(int&& number)
+int& PrintNumber(int& number)
 {
     cout << number << ", ";
-    return false;
+    int hi = 20;
+    return hi;
 }
 
 
@@ -110,18 +113,18 @@ int main (int , char * [])
     Foo foo;
     int c = 5;
     pool.start();
-    auto a = pool.add_task(PrintNumber, std::move(c));
+    auto a = pool.add_task(&Foo::PrintNumber, foo, c);
+    
     /*
     for (int i = 1; i < 1000; ++i)
     {
-        a = pool.add_task(&Foo::PrintNumber, foo, std::ref(i));
+        a = pool.add_task(&Foo::PrintNumber, foo, i);
         
     }
     */
-    if (!a->get())
-    {
-        cout << "cock";
-    }
+    
+    a->wait();
+    cout << " value: " << a->get();
     
 #endif // USE_CONCURRENCY
 
