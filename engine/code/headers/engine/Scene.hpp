@@ -19,6 +19,7 @@
 #include <engine/Stage.hpp>
 #include <engine/Subsystem.hpp>
 
+#include <mutex>
 namespace udit::engine
 {
 
@@ -27,6 +28,8 @@ namespace udit::engine
         using Subsystem_Array = std::vector < Subsystem::Unique_Ptr >;
         using Entity_Array    = Sparse_Array< Entity   >;
         using Entity_Map      = std::map< Id, Entity * >;
+
+        std::mutex component_mutex;
 
     public:
 
@@ -117,6 +120,8 @@ namespace udit::engine
         template< class COMPONENT, typename ...ARGUMENTS >
         COMPONENT * create_component (Entity & entity, const ARGUMENTS & ...arguments)
         {
+            std::lock_guard<std::mutex> lock(component_mutex);
+
             auto   subsystem_id = Subsystem::id_of< COMPONENT > ();
             auto & subsystem    = subsystems[subsystem_id];
 

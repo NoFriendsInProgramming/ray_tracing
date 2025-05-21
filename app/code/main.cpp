@@ -47,11 +47,16 @@ namespace
 
 #ifdef USE_CONCURRENCY
 
+        //auto component_a = main_pool.add_task(&Scene::create_component<Transform>, std::ref(scene), std::ref(entity));
+        auto component_a = main_pool.add_task(&Scene::create_component<Path_Tracing::Camera, Path_Tracing::Camera::Sensor_Type, float>, std::ref(scene), std::ref(entity), Path_Tracing::Camera::Sensor_Type::APS_C, 16.f / 1000.f);
+
+        scene.create_component< Transform >(entity);
+        std::shared_ptr< Controller > camera_controller = std::make_shared< Camera_Controller >(scene, entity.id);
+        scene.create_component< Control::Component >(entity, camera_controller);
+
+        component_a->wait();
+
 #else
-
-#endif
-
-        //main_pool.add_task(&Scene::create_component<Transform>, scene, entity);
 
         scene.create_component< Transform > (entity);
         scene.create_component< Path_Tracing::Camera > (entity, Path_Tracing::Camera::Sensor_Type::APS_C, 16.f / 1000.f);
@@ -59,6 +64,10 @@ namespace
         std::shared_ptr< Controller > camera_controller = std::make_shared< Camera_Controller > (scene, entity.id);
 
         scene.create_component< Control::Component > (entity, camera_controller);
+#endif
+
+        //
+
     }
 
     void load_ground (Scene & scene)
@@ -66,16 +75,19 @@ namespace
         auto & entity = scene.create_entity ();
 
 #ifdef USE_CONCURRENCY
-
+        auto component_a = main_pool.add_task(&Scene::create_component<Transform>, std::ref(scene), std::ref(entity));
+        auto model_component = scene.create_component< Path_Tracing::Model >(entity);
+        model_component->add_plane(Vector3{ 0, -1, 0 }, model_component->add_diffuse_material(Path_Tracing::Color(.4f, .4f, .5f)));
+        component_a->wait();
 #else
-
-#endif
 
         scene.create_component< Transform > (entity);
 
         auto model_component = scene.create_component< Path_Tracing::Model > (entity);
 
         model_component->add_plane (Vector3{0, -1, 0}, model_component->add_diffuse_material (Path_Tracing::Color(.4f, .4f, .5f)));
+#endif
+
     }
 
     void load_shape (Scene & scene)
@@ -83,16 +95,19 @@ namespace
         auto & entity = scene.create_entity ();
 
 #ifdef USE_CONCURRENCY
-
+        auto component_a = main_pool.add_task(&Scene::create_component<Transform>, std::ref(scene), std::ref(entity));
+        auto model_component = scene.create_component< Path_Tracing::Model >(entity);
+        model_component->add_sphere(.25f, model_component->add_diffuse_material(Path_Tracing::Color(.8f, .8f, .8f)));
+        component_a->wait();
 #else
-
-#endif
 
         scene.create_component< Transform > (entity);
 
         auto model_component = scene.create_component< Path_Tracing::Model > (entity);
 
         model_component->add_sphere (.25f, model_component->add_diffuse_material (Path_Tracing::Color(.8f, .8f, .8f)));
+#endif
+
     }
 
     void load (Scene & scene)
