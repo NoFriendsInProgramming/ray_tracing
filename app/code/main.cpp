@@ -157,7 +157,7 @@ namespace
 int main (int , char * [])
 {
     
-    engine::starter.run(engine_application);//std::bind(&Starter::engine_application, &engine::starter));
+    engine::starter.run(engine_application); //std::bind(&Starter::engine_application, &engine::starter));
 
     return 0;
 }

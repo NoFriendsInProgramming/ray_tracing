@@ -9,7 +9,9 @@
 
 #include <engine/Key_Event.hpp>
 #include <engine/Stage.hpp>
+#include <engine/Starter.hpp>
 #include <engine/Timer.hpp>
+#include <SDL3/SDL.h>
 
 namespace udit::engine
 {
@@ -21,10 +23,13 @@ namespace udit::engine
     private:
 
         Key_Event_Pool key_events;
+        int interval_ms;
+
+        void sdl_poll_to_key_push(SDL_Event& event);
 
     public:
 
-        Input_Stage(Scene & scene) : Stage(scene)
+        Input_Stage(Scene & scene) : Stage(scene), interval_ms(1000/60)
         {
         }
 

@@ -33,8 +33,8 @@
 
             class Segment
             {
-                std::vector< Node > nodes;
                 //std::mutex structure_mutex;
+                std::vector< Node > nodes;
 
             public:
 
@@ -84,6 +84,7 @@
 
         private:
 
+            std::mutex structure_mutex;
             Pool   pool;
             Node * first_node;
 
@@ -96,7 +97,10 @@
 
             Id allocate_id ()
             {
-                if (not first_node) first_node = pool.extend ();
+                {
+                    std::lock_guard<std::mutex> lock(structure_mutex);
+                    if (not first_node) first_node = pool.extend ();
+                }
 
                 Id id = first_node->id;
 

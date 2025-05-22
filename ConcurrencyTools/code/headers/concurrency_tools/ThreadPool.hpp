@@ -85,33 +85,33 @@ namespace udit::concurrencytools
 			using ReturnType = std::invoke_result_t<Callable, Args...>;
 			using PackagedTask = std::packaged_task<ReturnType()>;
 
-			explicit Custom_Task(Callable&& func, Args&&... args)
-				: func_(std::forward<Callable>(func)),
-				captures_(forward_capture<Args>(std::forward<Args>(args))...)
+			explicit Custom_Task(Callable&& new_func, Args&&... args)
+				: func(std::forward<Callable>(new_func)),
+				captures(forward_capture<Args>(std::forward<Args>(args))...)
 			{
 				auto bound = [this]() mutable -> ReturnType {
 					return invoke_impl(std::index_sequence_for<Args...>{});
 					};
 
-				packaged_task_ = PackagedTask(std::move(bound));
+				packaged_task = PackagedTask(std::move(bound));
 			}
 
 			std::any get_future() override {
-				return std::make_shared<std::future<ReturnType>>(packaged_task_.get_future());
+				return std::make_shared<std::future<ReturnType>>(packaged_task.get_future());
 			}
 
 			void invoke() override {
-				packaged_task_();
+				packaged_task();
 			}
 
 		private:
-			Callable func_;
-			std::tuple<forward_capture<Args>...> captures_;
-			PackagedTask packaged_task_;
+			Callable func;
+			std::tuple<forward_capture<Args>...> captures;
+			PackagedTask packaged_task;
 
 			template <std::size_t... I>
 			ReturnType invoke_impl(std::index_sequence<I...>) {
-				return std::invoke(func_, std::get<I>(captures_).forward()...);
+				return std::invoke(func, std::get<I>(captures).forward()...);
 			}
 		};
 

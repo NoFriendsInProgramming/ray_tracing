@@ -7,9 +7,15 @@
 
 #include <engine/Input_Stage.hpp>
 #include <engine/Scene.hpp>
+#include <chrono>
+#if __has_include("concurrency_tools/ThreadPool.hpp")
+#include<concurrency_tools/ThreadPool.hpp>
+//#define USE_CONCURRENCY
+#endif
 
-#include <SDL3/SDL.h>
 
+
+using namespace udit::concurrencytools;
 namespace udit::engine
 {
 
@@ -99,47 +105,69 @@ namespace udit::engine
         return Stage::setup< Input_Stage > ();
     }
 
+    void Input_Stage::sdl_poll_to_key_push(SDL_Event& event)
+    {
+        switch (event.type)
+        {
+            case SDL_EVENT_KEY_DOWN:
+            {
+                scene.get_input_event_queue().push
+                (
+                    key_events.push
+                    (
+                        internal::key_code_from_sdl_key_code(event.key.key),
+                        Key_Event::PRESSED
+                    )
+                );
+
+                break;
+            }
+
+            case SDL_EVENT_KEY_UP:
+            {
+                scene.get_input_event_queue().push
+                (
+                    key_events.push
+                    (
+                        internal::key_code_from_sdl_key_code(event.key.key),
+                        Key_Event::RELEASED
+                    )
+                );
+
+                break;
+            }
+
+            case SDL_EVENT_QUIT:
+            {
+                scene.stop();
+                break;
+            }
+        }
+    }
+
     void Input_Stage::compute (float)
     {
         SDL_Event event;
 
         while (SDL_PollEvent (&event))
         {
-            switch (event.type)
-            {
-                case SDL_EVENT_KEY_DOWN:
-                {
-                    scene.get_input_event_queue ().push
-                    (
-                        key_events.push
-                        (
-                            internal::key_code_from_sdl_key_code (event.key.key),
-                            Key_Event::PRESSED
-                        )
-                    );
+            auto start_time = std::chrono::steady_clock::now();
+#ifdef USE_CONCURRENCY
 
-                    break;
-                }
+            engine::starter.thread_pool().add_task(&Input_Stage::sdl_poll_to_key_push, this, std::ref(event));
+#else
 
-                case SDL_EVENT_KEY_UP:
-                {
-                    scene.get_input_event_queue ().push
-                    (
-                        key_events.push
-                        (
-                            internal::key_code_from_sdl_key_code (event.key.key),
-                            Key_Event::RELEASED
-                        )
-                    );
+            sdl_poll_to_key_push(event);
+#endif 
+            
+            
 
-                    break;
-                }
+            auto end_time = std::chrono::steady_clock::now();
+            auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);
+            auto sleep_duration = std::chrono::milliseconds(interval_ms) - elapsed;
 
-                case SDL_EVENT_QUIT:
-                {
-                    scene.stop ();
-                    break;
-                }
+            if (sleep_duration.count() > 0) {
+                std::this_thread::sleep_for(sleep_duration);
             }
         }
     }
