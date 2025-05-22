@@ -3,7 +3,3 @@
 
 #include <ThreadPool.hpp>
 
-namespace udit::concurrencytools
-{
-	
-}

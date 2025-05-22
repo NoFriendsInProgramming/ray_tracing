@@ -5,11 +5,12 @@
  * See ./LICENSE or www.boost.org/LICENSE_1_0.txt
  */
 
-
+/*
 #if __has_include("concurrency_tools/ThreadPool.hpp")
     #include<concurrency_tools/ThreadPool.hpp>
     #define USE_CONCURRENCY
 #endif
+*/
 
 /*
 * Structure to test things without concurrency tools if necessaryy
@@ -19,7 +20,10 @@
 
 #endif
 */
-
+#if __has_include("concurrency_tools/ThreadPool.hpp")
+#include<concurrency_tools/ThreadPool.hpp>
+//#define USE_CONCURRENCY
+#endif
 
 #include <engine/Control.hpp>
 #include <engine/Key_Event.hpp>
@@ -36,10 +40,12 @@ using namespace udit;
 using namespace udit::engine;
 using namespace udit::concurrencytools;
 
+    
 namespace
 {
-
-    ThreadPool main_pool;
+#ifdef USE_CONCURRENCY
+    //ThreadPool main_pool;
+#endif
 
     void load_camera (Scene & scene)
     {
@@ -48,7 +54,7 @@ namespace
 #ifdef USE_CONCURRENCY
 
         //auto component_a = main_pool.add_task(&Scene::create_component<Transform>, std::ref(scene), std::ref(entity));
-        auto component_a = main_pool.add_task(&Scene::create_component<Path_Tracing::Camera, Path_Tracing::Camera::Sensor_Type, float>, std::ref(scene), std::ref(entity), Path_Tracing::Camera::Sensor_Type::APS_C, 16.f / 1000.f);
+        auto component_a = Starter::thread_pool().add_task(&Scene::create_component<Path_Tracing::Camera, Path_Tracing::Camera::Sensor_Type, float>, std::ref(scene), std::ref(entity), Path_Tracing::Camera::Sensor_Type::APS_C, 16.f / 1000.f);
 
         scene.create_component< Transform >(entity);
         std::shared_ptr< Controller > camera_controller = std::make_shared< Camera_Controller >(scene, entity.id);
@@ -75,7 +81,7 @@ namespace
         auto & entity = scene.create_entity ();
 
 #ifdef USE_CONCURRENCY
-        auto component_a = main_pool.add_task(&Scene::create_component<Transform>, std::ref(scene), std::ref(entity));
+        auto component_a = Starter::thread_pool().add_task(&Scene::create_component<Transform>, std::ref(scene), std::ref(entity));
         auto model_component = scene.create_component< Path_Tracing::Model >(entity);
         model_component->add_plane(Vector3{ 0, -1, 0 }, model_component->add_diffuse_material(Path_Tracing::Color(.4f, .4f, .5f)));
         component_a->wait();
@@ -95,7 +101,7 @@ namespace
         auto & entity = scene.create_entity ();
 
 #ifdef USE_CONCURRENCY
-        auto component_a = main_pool.add_task(&Scene::create_component<Transform>, std::ref(scene), std::ref(entity));
+        auto component_a = Starter::thread_pool().add_task(&Scene::create_component<Transform>, std::ref(scene), std::ref(entity));
         auto model_component = scene.create_component< Path_Tracing::Model >(entity);
         model_component->add_sphere(.25f, model_component->add_diffuse_material(Path_Tracing::Color(.8f, .8f, .8f)));
         component_a->wait();
@@ -114,19 +120,19 @@ namespace
     {
 #ifdef USE_CONCURRENCY
 
-        auto entity_a = main_pool.add_task(load_camera, std::ref(scene));
-        auto entity_b = main_pool.add_task(load_ground, std::ref(scene));
-        auto entity_c = main_pool.add_task(load_shape , std::ref(scene));
+        auto entity_a = Starter::thread_pool().add_task(load_camera, std::ref(scene));
+        auto entity_b = Starter::thread_pool().add_task(load_ground, std::ref(scene));
+        auto entity_c = Starter::thread_pool().add_task(load_shape , std::ref(scene));
 
         entity_a->wait();
         entity_b->wait();
         entity_c->wait();
 
 #else
-
-        load_camera (scene);
-        load_ground (scene);
-        load_shape  (scene);
+        
+        engine::starter.load_camera (scene);
+        engine::starter.load_ground (scene);
+        engine::starter.load_shape  (scene);
 #endif
     }
 
@@ -136,64 +142,22 @@ namespace
         Scene scene(window);
 
 #ifdef USE_CONCURRENCY
-        main_pool.start();
-        load(scene);
-        //main_pool.stop();
-#else
-        load(scene);
+        Starter::thread_pool().start();
 #endif
+
+        load(scene);
 
         scene.run ();
     }
 
 }
 
-class Foo
-{
-public:
-    int hi;
-    int& PrintNumber(const int& number)
-    {
-        cout << number << ", ";
-        hi = 50;
-        return hi;
-    }
-};
-
-int& PrintNumber(int& number)
-{
-    cout << (number*= 5) << ", ";
-    //int hi = 20;
-    return number;
-}
 
 
 int main (int , char * [])
 {
-#ifdef USE_CONCURRENCY
-    /*
-    ThreadPool pool;
-    Foo foo;
-    int c = 2001;
-    pool.start();
-    auto a = pool.add_task(PrintNumber, std::ref(c));
     
-    
-    for (int i = 1; i < 1000; ++i)
-    {
-        a = pool.add_task(&Foo::PrintNumber, foo, i);
-        
-    }
-    
-    
-    
-    //a->wait();
-    cout << " value: " << a->get() << " old value: " << c ;
-    */
-#endif // USE_CONCURRENCY
-
-   
-    engine::starter.run (engine_application);
+    engine::starter.run(engine_application);//std::bind(&Starter::engine_application, &engine::starter));
 
     return 0;
 }

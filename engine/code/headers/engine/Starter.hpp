@@ -7,10 +7,31 @@
 #pragma once
 
 #include <functional>
+#include <engine/Control.hpp>
+#include <engine/Key_Event.hpp>
+#include <engine/Path_Tracing.hpp>
+#include <engine/Starter.hpp>
+#include <engine/Scene.hpp>
+#include <engine/Window.hpp>
+#include <engine/Entity.hpp>
 
+#include "Camera_Controller.hpp"
+
+
+
+#if __has_include("concurrency_tools/ThreadPool.hpp")
+    #include<concurrency_tools/ThreadPool.hpp>
+    #define USE_CONCURRENCY
+#endif
+
+
+
+using namespace std;
+using namespace udit;
+using namespace udit::concurrencytools;
+    
 namespace udit::engine
 {
-
     class Starter
     {
     public:
@@ -20,14 +41,26 @@ namespace udit::engine
             static Starter engine;
             return engine;
         }
-
+#ifdef USE_CONCURRENCY
+        static ThreadPool& thread_pool()
+        {
+            return main_pool;
+        }
+    private:
+        static ThreadPool main_pool;
+#endif
     public:
 
-        void run (const std::function< void() > & runnable);
+        void run(const std::function<void()> & runnable);
 
+        void load_camera(Scene& scene);
+        void load_ground(Scene& scene);
+        void load_shape (Scene& scene);
+        void load       (Scene& scene);
+        void engine_application();
     private:
-
         bool initialize ();
+
 
         struct Finalizer
         {

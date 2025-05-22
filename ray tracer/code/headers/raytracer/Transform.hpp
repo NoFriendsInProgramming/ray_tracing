@@ -35,7 +35,7 @@ namespace udit::raytracer
 
         bool has_changed (bool reset)
         {
-            auto has_changed = changed;
+            bool has_changed = changed;
 
             if (reset) changed = false;
 

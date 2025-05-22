@@ -12,13 +12,14 @@
 
     #include <vector>
     #include <engine/Id.hpp>
+    #include <mutex>
 
     namespace udit::engine
     {
 
         class Id_Provider
         {
-
+            
             static constexpr size_t pool_capacity =  32;        // Número de segmentos reservados de antemano
             static constexpr size_t segment_size  = 256;
             static constexpr size_t segment_shift =   8;
@@ -33,11 +34,13 @@
             class Segment
             {
                 std::vector< Node > nodes;
+                //std::mutex structure_mutex;
 
             public:
 
                 Segment(size_t segment_index) : nodes{segment_size}
                 {
+                    //std::lock_guard<std::mutex> lock(structure_mutex);
                     Id id = static_cast< Id >(segment_index * segment_size);
 
                     for (auto & node : nodes) node = { &node + 1, id++ };

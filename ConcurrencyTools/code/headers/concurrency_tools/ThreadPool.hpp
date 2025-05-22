@@ -163,6 +163,7 @@ namespace udit::concurrencytools
 
 				unspecified_future = tasks.back()->get_future();
 			}
+			task_cv.notify_all();
 
 			return std::any_cast<std::shared_ptr<std::future<ReturnType>>>(unspecified_future);
 		}
@@ -210,7 +211,7 @@ namespace udit::concurrencytools
 
 	};
 
-	void ThreadPool::thread_function(std::stop_token stop_token)
+	inline void ThreadPool::thread_function(std::stop_token stop_token)
 	{
 		std::unique_lock lock(queue_mutex);
 		while (!stop_token.stop_requested())

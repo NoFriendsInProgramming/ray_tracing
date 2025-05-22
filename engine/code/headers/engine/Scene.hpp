@@ -110,6 +110,7 @@ namespace udit::engine
 
         Entity & create_entity (Id name)
         {
+            //std::lock_guard<std::mutex> lock(component_mutex);
             auto & entity = create_entity ();
 
             entities_by_name[name] = &entity;
