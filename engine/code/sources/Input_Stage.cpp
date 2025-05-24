@@ -160,8 +160,6 @@ namespace udit::engine
             sdl_poll_to_key_push(event);
 #endif 
             
-            
-
             auto end_time = std::chrono::steady_clock::now();
             auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);
             auto sleep_duration = std::chrono::milliseconds(interval_ms) - elapsed;

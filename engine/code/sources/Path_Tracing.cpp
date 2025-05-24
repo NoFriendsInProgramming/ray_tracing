@@ -16,6 +16,7 @@
 #include <raytracer/Sphere.hpp>
 #include <raytracer/Skydome.hpp>
 
+
 namespace udit::engine
 {
 
@@ -118,7 +119,7 @@ namespace udit::engine
     Component * Path_Tracing::create_camera_component (Entity & entity, Camera::Sensor_Type sensor_type, float focal_length)
     {
         auto camera = camera_components.allocate (entity.id);
-
+        component_futures.push_back(std::make_shared < std::future<void>>());
         camera->instance = path_tracer_scene.create< raytracer::Pinhole_Camera > (sensor_type, focal_length);
 
         return camera;
@@ -133,6 +134,7 @@ namespace udit::engine
     Component * Path_Tracing::create_model_component (Entity & entity)
     {
         auto model = model_components.allocate (entity.id);
+        component_futures.push_back(std::make_shared < std::future<void>>());
 
         model->instance = path_tracer_scene.create< raytracer::Model > ();
         model->path_tracer_scene = &path_tracer_scene;
@@ -172,27 +174,101 @@ namespace udit::engine
         }
     }
 
+    void Path_Tracing::Stage::update_camera_transform(udit::engine::Path_Tracing::Camera& camera, Scene& scene)
+    {
+        auto transform = scene.get_component< Transform >(camera.entity_id);
+
+        auto task_a = Starter::thread_pool().add_task(&udit::raytracer::Transform::set_position, &camera.instance->transform, std::cref(transform->position));
+        auto task_b = Starter::thread_pool().add_task(&udit::raytracer::Transform::set_rotation, &camera.instance->transform, std::cref(transform->rotation));
+        auto task_c = Starter::thread_pool().add_task(&udit::raytracer::Transform::set_scales,   &camera.instance->transform, std::cref(transform->scales  ));
+
+        task_a->wait();
+        task_b->wait();
+        task_c->wait();
+        /*
+        camera.instance->transform.set_position(transform->position);
+        camera.instance->transform.set_rotation(transform->rotation);
+        camera.instance->transform.set_scales(transform->scales);
+        */
+    }
+    void Path_Tracing::Stage::update_model_transform(udit::engine::Path_Tracing::Model& model, Scene& scene)
+    {
+        auto transform = scene.get_component< Transform >(model.entity_id);
+
+        auto task_a = Starter::thread_pool().add_task(&udit::raytracer::Transform::set_position, &model.instance->transform, std::cref(transform->position));
+        auto task_b = Starter::thread_pool().add_task(&udit::raytracer::Transform::set_rotation, &model.instance->transform, std::cref(transform->rotation));
+        auto task_c = Starter::thread_pool().add_task(&udit::raytracer::Transform::set_scales, &model.instance->transform, std::cref(transform->scales));
+
+        task_a->wait();
+        task_b->wait();
+        task_c->wait();
+
+        /*
+        model.instance->transform.set_position(transform->position);
+        model.instance->transform.set_rotation(transform->rotation);
+        model.instance->transform.set_scales(transform->scales);
+        */
+    }
+
     void Path_Tracing::Stage::update_component_transforms ()
     {
         static int it = 0;
-
-        for (auto & camera : subsystem->camera_components)
+        auto a = subsystem->component_futures;
+#ifdef USE_CONCURRENCY
+        int component_count = -1;
+        for (auto& camera : subsystem->camera_components)
         {
-            auto transform = subsystem->scene.get_component< Transform > (camera.entity_id);
-
-            camera.instance->transform.set_position (transform->position);
-            camera.instance->transform.set_rotation (transform->rotation);
-            camera.instance->transform.set_scales   (transform->scales  );
+            
+            subsystem->component_futures[++component_count] = Starter::thread_pool().add_task(&Path_Tracing::Stage::update_camera_transform, 
+                                                                                this, 
+                                                                                std::ref(camera), 
+                                                                                std::ref(subsystem->scene));
+                                                                                
+            //update_camera_transform(camera, subsystem->scene);
         }
 
-        for (auto & model : subsystem->camera_components)
+        for (auto& model : subsystem->model_components)
         {
-            auto transform = subsystem->scene.get_component< Transform > (model.entity_id);
-
-            model.instance->transform.set_position (transform->position);
-            model.instance->transform.set_rotation (transform->rotation);
-            model.instance->transform.set_scales   (transform->scales  );
+            
+            subsystem->component_futures[++component_count] = Starter::thread_pool().add_task(&Path_Tracing::Stage::update_model_transform,
+                this,
+                std::ref(model),
+                std::ref(subsystem->scene));
+            
+            //update_model_transform(model, subsystem->scene);
         }
+
+        
+        for (auto& component_future : subsystem->component_futures)
+        {
+            if (component_future.get())
+            {
+                component_future->wait();
+            
+            }
+        }
+        
+
+#else
+        for (auto& camera : subsystem->camera_components)
+        {
+            auto transform = subsystem->scene.get_component< Transform >(camera.entity_id);
+
+            camera.instance->transform.set_position(transform->position);
+            camera.instance->transform.set_rotation(transform->rotation);
+            camera.instance->transform.set_scales(transform->scales);
+        }
+
+        for (auto& model : subsystem->camera_components)
+        {
+            auto transform = subsystem->scene.get_component< Transform >(model.entity_id);
+
+            model.instance->transform.set_position(transform->position);
+            model.instance->transform.set_rotation(transform->rotation);
+            model.instance->transform.set_scales(transform->scales);
+        }
+#endif
+        
     }
 
     Path_Tracing::Material * Path_Tracing::Model::add_diffuse_material  (const Color & color)

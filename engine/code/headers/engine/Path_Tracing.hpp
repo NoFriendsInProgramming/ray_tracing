@@ -8,11 +8,18 @@
 #pragma once
 
 #include <memory>
+#include <vector>                  
+#include <future>          
 
+#include <engine/Path_Tracing.hpp>
 #include <engine/Entity.hpp>
 #include <engine/Stage.hpp>
 #include <engine/Subsystem.hpp>
 #include <engine/Transform.hpp>
+#include <engine/Starter.hpp>
+#if __has_include("concurrency_tools/ThreadPool.hpp")
+#include<concurrency_tools/ThreadPool.hpp>
+#endif
 
 #include <raytracer/Camera.hpp>
 #include <raytracer/Diffuse_Material.hpp>
@@ -24,13 +31,16 @@
 #include <raytracer/Scene.hpp>
 #include <raytracer/Sky_Environment.hpp>
 
+using namespace udit::concurrencytools;
+
 namespace udit::engine
 {
 
     class Path_Tracing : public Subsystem
     {
     public:
-
+        class Model;
+        class Camera;
         class Stage : public engine::Stage
         {
             Path_Tracing * subsystem;
@@ -48,6 +58,8 @@ namespace udit::engine
         private:
 
             void update_component_transforms ();
+            void update_camera_transform(udit::engine::Path_Tracing::Camera& camera, Scene& scene);
+            void update_model_transform(udit::engine::Path_Tracing::Model& model, Scene& scene);
         };
 
         friend class Stage;
@@ -77,8 +89,9 @@ namespace udit::engine
 
     private:
 
-        Component_Store< Camera > camera_components;
-        Component_Store< Model  >  model_components;
+        Component_Store< Camera    > camera_components;
+        Component_Store< Model     >  model_components;
+        std::vector<std::shared_ptr<std::future<void>>> component_futures;
 
         raytracer::Path_Tracer    path_tracer;
         raytracer::Scene          path_tracer_scene;
