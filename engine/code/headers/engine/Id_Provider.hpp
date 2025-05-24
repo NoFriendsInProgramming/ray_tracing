@@ -98,20 +98,13 @@
 
             Id allocate_id ()
             {
-#ifdef USE_CONCURRENCY
-                {
-                    std::lock_guard<std::mutex> lock(structure_mutex);
-                    if (not first_node) first_node = pool.extend ();
-                }
-#else
-
-                if (not first_node) first_node = pool.extend();
-#endif // USE_CONCURRENCY
-
-
+                
+                std::lock_guard<std::mutex> lock(structure_mutex);
+                if (not first_node) first_node = pool.extend ();
                 Id id = first_node->id;
-
+                
                 first_node = first_node->next;
+
 
                 return id;
             }

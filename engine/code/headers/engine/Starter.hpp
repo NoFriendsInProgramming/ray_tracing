@@ -21,7 +21,7 @@
 
 #if __has_include("concurrency_tools/ThreadPool.hpp")
     #include<concurrency_tools/ThreadPool.hpp>
-    //#define USE_CONCURRENCY
+    #define USE_CONCURRENCY
     using namespace udit::concurrencytools;
 #endif
 

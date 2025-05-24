@@ -123,8 +123,8 @@ namespace udit::engine
         {
 #ifdef USE_CONCURRENCY
 
-            std::lock_guard<std::mutex> lock(component_mutex);
 #endif
+            std::lock_guard<std::mutex> lock(component_mutex);
 
 
             auto   subsystem_id = Subsystem::id_of< COMPONENT > ();
