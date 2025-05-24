@@ -5,24 +5,10 @@
  * See ./LICENSE or www.boost.org/LICENSE_1_0.txt
  */
 
-/*
+
 #if __has_include("concurrency_tools/ThreadPool.hpp")
     #include<concurrency_tools/ThreadPool.hpp>
-    #define USE_CONCURRENCY
-#endif
-*/
-
-/*
-* Structure to test things without concurrency tools if necessaryy
-* #ifdef USE_CONCURRENCY
-
-#else
-
-#endif
-*/
-#if __has_include("concurrency_tools/ThreadPool.hpp")
-#include<concurrency_tools/ThreadPool.hpp>
-//#define USE_CONCURRENCY
+    using namespace udit::concurrencytools;
 #endif
 
 #include <engine/Control.hpp>
@@ -38,7 +24,6 @@
 using namespace std;
 using namespace udit;
 using namespace udit::engine;
-using namespace udit::concurrencytools;
 
     
 namespace
@@ -157,7 +142,7 @@ namespace
 int main (int , char * [])
 {
     
-    engine::starter.run(engine_application); //std::bind(&Starter::engine_application, &engine::starter));
+    engine::starter.run(/*engine_application); */ std::bind(&Starter::engine_application, &engine::starter));
 
     return 0;
 }

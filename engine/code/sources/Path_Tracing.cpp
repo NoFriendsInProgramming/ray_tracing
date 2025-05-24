@@ -178,6 +178,8 @@ namespace udit::engine
     {
         auto transform = scene.get_component< Transform >(camera.entity_id);
 
+#ifdef USE_CONCURRENCY
+
         auto task_a = Starter::thread_pool().add_task(&udit::raytracer::Transform::set_position, &camera.instance->transform, std::cref(transform->position));
         auto task_b = Starter::thread_pool().add_task(&udit::raytracer::Transform::set_rotation, &camera.instance->transform, std::cref(transform->rotation));
         auto task_c = Starter::thread_pool().add_task(&udit::raytracer::Transform::set_scales,   &camera.instance->transform, std::cref(transform->scales  ));
@@ -185,16 +187,17 @@ namespace udit::engine
         task_a->wait();
         task_b->wait();
         task_c->wait();
-        /*
+#else
+        
         camera.instance->transform.set_position(transform->position);
         camera.instance->transform.set_rotation(transform->rotation);
         camera.instance->transform.set_scales(transform->scales);
-        */
+#endif
     }
     void Path_Tracing::Stage::update_model_transform(udit::engine::Path_Tracing::Model& model, Scene& scene)
     {
         auto transform = scene.get_component< Transform >(model.entity_id);
-
+#ifdef USE_CONCURRENCY
         auto task_a = Starter::thread_pool().add_task(&udit::raytracer::Transform::set_position, &model.instance->transform, std::cref(transform->position));
         auto task_b = Starter::thread_pool().add_task(&udit::raytracer::Transform::set_rotation, &model.instance->transform, std::cref(transform->rotation));
         auto task_c = Starter::thread_pool().add_task(&udit::raytracer::Transform::set_scales, &model.instance->transform, std::cref(transform->scales));
@@ -202,12 +205,12 @@ namespace udit::engine
         task_a->wait();
         task_b->wait();
         task_c->wait();
-
-        /*
+#else
+        
         model.instance->transform.set_position(transform->position);
         model.instance->transform.set_rotation(transform->rotation);
         model.instance->transform.set_scales(transform->scales);
-        */
+#endif
     }
 
     void Path_Tracing::Stage::update_component_transforms ()

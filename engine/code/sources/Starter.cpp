@@ -57,7 +57,6 @@ namespace udit::engine
 
     void Starter::load_camera(Scene& scene)
     {
-        
         auto& entity = scene.create_entity();
 
 #ifdef USE_CONCURRENCY
@@ -74,13 +73,14 @@ namespace udit::engine
 #else
 
         scene.create_component< Transform >(entity);
+        scene.create_component< Path_Tracing::Camera >(entity, Path_Tracing::Camera::Sensor_Type::APS_C, 16.f / 1000.f);
 
         std::shared_ptr< Controller > camera_controller = std::make_shared< Camera_Controller >(scene, entity.id);
 
         scene.create_component< Control::Component >(entity, camera_controller);
 #endif
 
-
+        //
 
     }
 
@@ -129,8 +129,8 @@ namespace udit::engine
 #ifdef USE_CONCURRENCY
 
         auto entity_a = Starter::thread_pool().add_task(&Starter::load_camera, &starter, std::ref(scene));
-        auto entity_b = Starter::thread_pool().add_task(&Starter::load_camera, &starter, std::ref(scene));
-        auto entity_c = Starter::thread_pool().add_task(&Starter::load_camera, &starter, std::ref(scene));
+        auto entity_b = Starter::thread_pool().add_task(&Starter::load_ground, &starter, std::ref(scene));
+        auto entity_c = Starter::thread_pool().add_task(&Starter::load_shape,  &starter, std::ref(scene));
 
         entity_a->wait();
         entity_b->wait();

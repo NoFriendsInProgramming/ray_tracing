@@ -12,7 +12,8 @@
 
     #include <vector>
     #include <engine/Id.hpp>
-    #include <mutex>
+#include <mutex>
+#include <engine/Starter.hpp>
 
     namespace udit::engine
     {
@@ -97,10 +98,16 @@
 
             Id allocate_id ()
             {
+#ifdef USE_CONCURRENCY
                 {
                     std::lock_guard<std::mutex> lock(structure_mutex);
                     if (not first_node) first_node = pool.extend ();
                 }
+#else
+
+                if (not first_node) first_node = pool.extend();
+#endif // USE_CONCURRENCY
+
 
                 Id id = first_node->id;
 

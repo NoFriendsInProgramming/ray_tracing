@@ -18,7 +18,7 @@
 #include <engine/Sparse_Array.hpp>
 #include <engine/Stage.hpp>
 #include <engine/Subsystem.hpp>
-
+#include <engine/Starter.hpp>
 #include <mutex>
 namespace udit::engine
 {
@@ -121,7 +121,11 @@ namespace udit::engine
         template< class COMPONENT, typename ...ARGUMENTS >
         COMPONENT * create_component (Entity & entity, const ARGUMENTS & ...arguments)
         {
+#ifdef USE_CONCURRENCY
+
             std::lock_guard<std::mutex> lock(component_mutex);
+#endif
+
 
             auto   subsystem_id = Subsystem::id_of< COMPONENT > ();
             auto & subsystem    = subsystems[subsystem_id];
