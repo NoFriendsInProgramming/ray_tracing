@@ -8,10 +8,14 @@
 #include <raytracer/Pinhole_Camera.hpp>
 #include <algorithm>
 #include <iostream>
+//#include <engine/Starter.hpp>
 using namespace std;
+//using namespace udit::concurrencytools;
+//using namespace udit::engine;
 
 namespace udit::raytracer
 {
+    const unsigned int Pinhole_Camera::chunk_count = 16;
 
     void Pinhole_Camera::calculate (Buffer< Ray > & primary_rays)
     {
@@ -44,12 +48,27 @@ namespace udit::raytracer
         Vector3 scanline_start     = sensor_bottom_left;
         auto    buffer_offset      = buffer_width * buffer_height;
 
-        unsigned int chunk_count = 7;
+        
         // Nifty way to round up when divinding two unsigned ints
         int chunk_height = (buffer_height + chunk_count - 1) / chunk_count;
 
+#ifdef USE_CONCURRENCY
         for (int i = 0; i < chunk_count; ++i)
         {
+            pixel_chunk_futures[i] = buffer_pool.add_task(
+                &Pinhole_Camera::calculate_row_chunks, 
+                this,
+                buffer_height - chunk_height * i,
+                std::max(0, (int)buffer_height - chunk_height * (i + 1)),
+                buffer_width,
+                std::cref(vertical_step),
+                std::cref(horizontal_step),
+                std::cref(focal_point),
+                std::ref(primary_rays),
+                buffer_offset - ((chunk_height * i) * buffer_width),
+                scanline_start + (vertical_step * (float)(chunk_height * i))
+                );
+            /*
             calculate_row_chunks(
                 buffer_height - chunk_height * i,
                 std::max(0, (int)buffer_height - chunk_height * (i + 1)),
@@ -61,8 +80,14 @@ namespace udit::raytracer
                 buffer_offset - ((chunk_height * i) * buffer_width),
                 scanline_start + (vertical_step * (float)(chunk_height * i))
             );
+            */
         }
-        /*
+
+        for (auto future : pixel_chunk_futures)
+        {
+            future->wait();
+        }
+#else
         for (auto row = buffer_height; row > 0; --row, scanline_start += vertical_step)
         {
 
@@ -73,7 +98,12 @@ namespace udit::raytracer
                 primary_rays[--buffer_offset] = Ray{ pixel, focal_point - pixel };
             }
         }
-        */
+#endif 
+
+       
+       
+       
+       
     }
 
     void Pinhole_Camera::calculate_row_chunks(

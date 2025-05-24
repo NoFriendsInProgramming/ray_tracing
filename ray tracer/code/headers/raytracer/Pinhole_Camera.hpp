@@ -8,17 +8,28 @@
 #pragma once
 
 #include <raytracer/Camera.hpp>
+#include <future>
+#include <vector>
+#include <memory>
+#define USE_CONCURRENCY
+#include <concurrency_tools/ThreadPool.hpp>
+using namespace udit::concurrencytools;
 namespace udit::raytracer
 {
 
     class Pinhole_Camera : public Camera
     {
+    private:
+        const static unsigned int chunk_count;
+        ThreadPool buffer_pool;
+        std::vector<std::shared_ptr<std::future<void>>> pixel_chunk_futures;
     public:
 
-        Pinhole_Camera(const Sensor_Type & given_sensor_type, float given_focal_length)
-        :
-            Camera(given_sensor_type, given_focal_length)
+        Pinhole_Camera(const Sensor_Type& given_sensor_type, float given_focal_length)
+            :
+            Camera(given_sensor_type, given_focal_length), pixel_chunk_futures{chunk_count }
         {
+            buffer_pool.start();
         }
 
         void calculate (Buffer< Ray > & primary_rays) override;
