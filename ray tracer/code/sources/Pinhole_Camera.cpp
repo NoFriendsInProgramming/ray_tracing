@@ -6,7 +6,7 @@
  */
 
 #include <raytracer/Pinhole_Camera.hpp>
-
+#include <algorithm>
 #include <iostream>
 using namespace std;
 
@@ -15,6 +15,7 @@ namespace udit::raytracer
 
     void Pinhole_Camera::calculate (Buffer< Ray > & primary_rays)
     {
+        
         auto buffer_width  = primary_rays.get_width  ();
         auto buffer_height = primary_rays.get_height ();
 
@@ -43,8 +44,53 @@ namespace udit::raytracer
         Vector3 scanline_start     = sensor_bottom_left;
         auto    buffer_offset      = buffer_width * buffer_height;
 
+        unsigned int chunk_count = 7;
+        // Nifty way to round up when divinding two unsigned ints
+        int chunk_height = (buffer_height + chunk_count - 1) / chunk_count;
+
+        for (int i = 0; i < chunk_count; ++i)
+        {
+            calculate_row_chunks(
+                buffer_height - chunk_height * i,
+                std::max(0, (int)buffer_height - chunk_height * (i + 1)),
+                buffer_width,
+                vertical_step,
+                horizontal_step,
+                focal_point,
+                primary_rays,
+                buffer_offset - ((chunk_height * i) * buffer_width),
+                scanline_start + (vertical_step * (float)(chunk_height * i))
+            );
+        }
+        /*
         for (auto row = buffer_height; row > 0; --row, scanline_start += vertical_step)
         {
+
+            Vector3 pixel = scanline_start;
+
+            for (auto column = buffer_width; column > 0; --column, pixel += horizontal_step)
+            {
+                primary_rays[--buffer_offset] = Ray{ pixel, focal_point - pixel };
+            }
+        }
+        */
+    }
+
+    void Pinhole_Camera::calculate_row_chunks(
+        const unsigned int& starting_height, 
+        const unsigned int& ending_height,
+        const unsigned int& buffer_width,
+        const Vector3& vertical_step,
+        const Vector3& horizontal_step,
+        const Vector3& focal_point,
+        Buffer< Ray >& primary_rays,
+        unsigned int buffer_offset,
+        Vector3 scanline_start
+    )
+    {
+        for (auto row = starting_height; row > ending_height; --row, scanline_start += vertical_step)
+        {
+
             Vector3 pixel = scanline_start;
 
             for (auto column = buffer_width; column > 0; --column, pixel += horizontal_step)

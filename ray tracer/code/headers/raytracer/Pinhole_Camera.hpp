@@ -8,7 +8,6 @@
 #pragma once
 
 #include <raytracer/Camera.hpp>
-
 namespace udit::raytracer
 {
 
@@ -23,6 +22,18 @@ namespace udit::raytracer
         }
 
         void calculate (Buffer< Ray > & primary_rays) override;
+
+        void calculate_row_chunks(
+            const unsigned int& starting_height,
+            const unsigned int& ending_height,
+            const unsigned int& buffer_width,
+            const Vector3& vertical_step,
+            const Vector3& horizontal_step,
+            const Vector3& focal_point,
+            Buffer< Ray >& primary_rays,
+            unsigned int buffer_offset,
+            Vector3 scanline_start
+        );
 
     };
 
