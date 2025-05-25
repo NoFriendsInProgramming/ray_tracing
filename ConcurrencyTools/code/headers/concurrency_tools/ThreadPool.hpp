@@ -31,7 +31,6 @@ namespace udit::concurrencytools
 
 		};
 
-		// Fallback: T&& → move semantics
 		template <typename T>
 		struct forward_capture {
 			T value;
@@ -40,7 +39,6 @@ namespace udit::concurrencytools
 			T&& forward() { return std::move(value); }
 		};
 
-		// T& specialization: copy instead of referencing for safe types
 		template <typename T>
 		struct forward_capture<T&> {
 		private:
@@ -69,16 +67,15 @@ namespace udit::concurrencytools
 		private:
 			static StorageType init_storage(T& val) {
 				if constexpr (should_copy) {
-					return val; // copy
+					return val; 
 				}
 				else {
-					return &val; // keep reference
+					return &val;
 				}
 			}
 		};
 
 
-		// --- Custom Task Implementation ---
 		template <typename Callable, typename... Args>
 		class Custom_Task : public Task {
 		public:
@@ -141,9 +138,7 @@ namespace udit::concurrencytools
 
 		~ThreadPool()
 		{
-			// I do not think this is really necessary though... I guess I have trouble understanding memory management still
 			stop_threads();
-			// cleanup: stop(), ...
 		}
 
 		template <typename Callable, typename... Args>
@@ -217,7 +212,6 @@ namespace udit::concurrencytools
 		while (!stop_token.stop_requested())
 		{
 
-			// Wait until there are tasks to process or stop has been requested
 			task_cv.wait(lock, [&] { return (stop_token.stop_requested()) || !tasks.empty(); });
 
 			if (stop_token.stop_requested()) {

@@ -19,6 +19,10 @@
 
 namespace udit::engine
 {
+#ifdef USE_CONCURRENCY
+
+    const long long Path_Tracing::Stage::interval = 1.f/25.f;
+#endif // USE_CONCURRENCY
 
     template<>
     Subsystem::Unique_Ptr Subsystem::create< Path_Tracing > (Scene & scene)
@@ -165,12 +169,28 @@ namespace udit::engine
                 subsystem->rays_per_pixel
             );
 
+#ifdef USE_CONCURRENCY
+            if (timer.get_elapsed<Seconds>() >= interval)
+            {
+                timer.reset();
+
+                Starter::thread_pool().add_task(
+                    &Window::blit_rgb_float,
+                    &window,
+                    subsystem->path_tracer.get_snapshot().data(),
+                    viewport_width,
+                    viewport_height
+                );
+            }
+#else
             window.blit_rgb_float
             (
-                subsystem->path_tracer.get_snapshot ().data (),
+                subsystem->path_tracer.get_snapshot().data(),
                 viewport_width,
                 viewport_height
             );
+#endif // USE_CONCURRENCY
+                     
         }
     }
 

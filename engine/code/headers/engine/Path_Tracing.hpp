@@ -17,8 +17,8 @@
 #include <engine/Subsystem.hpp>
 #include <engine/Transform.hpp>
 #include <engine/Starter.hpp>
-#if __has_include("concurrency_tools/ThreadPool.hpp")
-#include<concurrency_tools/ThreadPool.hpp>
+    #if __has_include("concurrency_tools/ThreadPool.hpp")
+    #include<concurrency_tools/ThreadPool.hpp>
 #endif
 
 #include <raytracer/Camera.hpp>
@@ -56,6 +56,10 @@ namespace udit::engine
             void compute (float) override;
 
         private:
+#ifdef USE_CONCURRENCY
+            Timer timer;
+            const static long long interval;
+#endif
 
             void update_component_transforms ();
             void update_camera_transform(udit::engine::Path_Tracing::Camera& camera, Scene& scene);
@@ -88,6 +92,7 @@ namespace udit::engine
         };
 
     private:
+        
 
         Component_Store< Camera    > camera_components;
         Component_Store< Model     >  model_components;
