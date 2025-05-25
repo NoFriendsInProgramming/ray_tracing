@@ -16,6 +16,10 @@ using namespace std;
 namespace udit::raytracer
 {
     const unsigned int Pinhole_Camera::chunk_count = 16;
+#ifdef USE_CONCURRENCY_RT
+    ThreadPool Pinhole_Camera::raytracer_pool;
+#endif // USE_CONCURRENCY
+
 
     void Pinhole_Camera::calculate (Buffer< Ray > & primary_rays)
     {
@@ -52,10 +56,10 @@ namespace udit::raytracer
         // Nifty way to round up when divinding two unsigned ints
         int chunk_height = (buffer_height + chunk_count - 1) / chunk_count;
 
-#ifdef USE_CONCURRENCY
+#ifdef USE_CONCURRENCY_RT
         for (int i = 0; i < chunk_count; ++i)
         {
-            pixel_chunk_futures[i] = buffer_pool.add_task(
+            pixel_chunk_futures[i] = Pinhole_Camera::thread_pool().add_task(
                 &Pinhole_Camera::calculate_row_chunks, 
                 this,
                 buffer_height - chunk_height * i,

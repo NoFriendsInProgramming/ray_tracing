@@ -16,13 +16,63 @@
 
 namespace udit::raytracer
 {
+    const unsigned int Path_Tracer::chunk_count = 16;
+
+    void Path_Tracer::sample_primary_rays_chunk(
+        const unsigned int& number_of_iterations,
+        const unsigned int& start,
+        const unsigned int& end,
+        const Sky_Environment& sky_environment,
+        Spatial_Data_Structure& spatial_data_structure
+    )
+    {
+        for (unsigned index = start; index < end; ++index)
+        {
+            for (unsigned iterations = number_of_iterations; iterations > 0; --iterations)
+            {
+                framebuffer[index] += trace_ray(primary_rays[index], spatial_data_structure, sky_environment, 0);
+                ray_counters[index] += 1;
+            }
+        }
+    }
 
     void Path_Tracer::sample_primary_rays_stage (Frame_Data & frame_data)
     {
         auto & sky_environment        = *frame_data.space.get_scene ().get_sky_environment ();
         auto & spatial_data_structure =  frame_data.space;
         auto   number_of_iterations   =  frame_data.number_of_iterations;
+        auto   ray_count              =  primary_rays.size();
+        
+        unsigned int ray_chunk        =  (ray_count + chunk_count - 1) / chunk_count;
 
+#ifdef USE_CONCURRENCY_RT
+        for (unsigned int i = 0; i < chunk_count; ++i)
+        {
+            ray_futures[i] = Pinhole_Camera::thread_pool().add_task(
+                &Path_Tracer::sample_primary_rays_chunk,
+                this,
+                std::cref(number_of_iterations),
+                ray_chunk * i,
+                std::min(ray_count, ray_chunk * (i + 1)),
+                std::cref(sky_environment),
+                std::ref(spatial_data_structure)
+            );
+            /*
+            sample_primary_rays_chunk(
+                number_of_iterations,
+                ray_chunk * i,
+                std::min(ray_count, ray_chunk * (i + 1)),
+                sky_environment,
+                spatial_data_structure
+                );
+                */
+        }
+
+        for (auto& future : ray_futures)
+        {
+            future->wait();
+        }
+#else
         for (unsigned index = 0, end = primary_rays.size (); index < end; ++index)
         {
             for (unsigned iterations = number_of_iterations; iterations > 0; --iterations)
@@ -31,6 +81,9 @@ namespace udit::raytracer
                 ray_counters[index] += 1;
             }
         }
+#endif
+        /*
+        */
     }
 
     void Path_Tracer::end_benchmark_stage (Frame_Data & )
@@ -79,7 +132,7 @@ namespace udit::raytracer
             return Color(0, 0, 0);
         }
         else
-            return sky_environment.sample (normalize (ray.direction));
+            return sky_environment.sample (udit::raytracer::normalize (ray.direction));
     }
 
 }

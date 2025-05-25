@@ -16,6 +16,7 @@
 #include <raytracer/Scene.hpp>
 #include <raytracer/Spatial_Data_Structure.hpp>
 #include <raytracer/Timer.hpp>
+#include <raytracer/Pinhole_Camera.hpp>
 
 namespace udit::raytracer
 {
@@ -32,13 +33,23 @@ namespace udit::raytracer
         };
 
     private:
-
+        const static unsigned int chunk_count;
         static constexpr unsigned recursion_limit = 10;
+        
+        std::vector<std::shared_ptr<std::future<void>>> ray_futures;
 
         Buffer< Color > framebuffer;
         Buffer< float > ray_counters;
         Buffer< Ray   > primary_rays;
         Buffer< Color > snapshot;
+
+        void sample_primary_rays_chunk(
+            const unsigned int& number_of_iterations,
+            const unsigned int& start,
+            const unsigned int& end,
+            const Sky_Environment& sky_environment,
+            Spatial_Data_Structure& spatial_data_structure
+        );
 
         struct
         {
@@ -52,7 +63,7 @@ namespace udit::raytracer
 
     public:
 
-        Path_Tracer()
+        Path_Tracer() : ray_futures{chunk_count}
         {
             ray_counters.clear (0.f);
         }
