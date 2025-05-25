@@ -57,15 +57,7 @@ namespace udit::raytracer
                 std::cref(sky_environment),
                 std::ref(spatial_data_structure)
             );
-            /*
-            sample_primary_rays_chunk(
-                number_of_iterations,
-                ray_chunk * i,
-                std::min(ray_count, ray_chunk * (i + 1)),
-                sky_environment,
-                spatial_data_structure
-                );
-                */
+
         }
 
         for (auto& future : ray_futures)

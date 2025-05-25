@@ -72,22 +72,10 @@ namespace udit::raytracer
                 buffer_offset - ((chunk_height * i) * buffer_width),
                 scanline_start + (vertical_step * (float)(chunk_height * i))
                 );
-            /*
-            calculate_row_chunks(
-                buffer_height - chunk_height * i,
-                std::max(0, (int)buffer_height - chunk_height * (i + 1)),
-                buffer_width,
-                vertical_step,
-                horizontal_step,
-                focal_point,
-                primary_rays,
-                buffer_offset - ((chunk_height * i) * buffer_width),
-                scanline_start + (vertical_step * (float)(chunk_height * i))
-            );
-            */
+
         }
 
-        for (auto future : pixel_chunk_futures)
+        for (auto &future : pixel_chunk_futures)
         {
             future->wait();
         }

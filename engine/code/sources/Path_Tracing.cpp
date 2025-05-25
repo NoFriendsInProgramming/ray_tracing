@@ -236,7 +236,6 @@ namespace udit::engine
     void Path_Tracing::Stage::update_component_transforms ()
     {
         static int it = 0;
-        auto a = subsystem->component_futures;
 #ifdef USE_CONCURRENCY
         int component_count = -1;
         for (auto& camera : subsystem->camera_components)

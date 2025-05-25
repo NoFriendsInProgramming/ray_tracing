@@ -27,6 +27,7 @@ namespace udit::raytracer
         Transform()
         {
             position = Vector3(0);
+            matrix   = Matrix4(0);
             rotation = Vector3(0);
             scales   = Vector3(1);
             cached   = false;
